@@ -1,0 +1,1 @@
+expression FolderData = "D:\Olist_PowerBI_Portfolio\data" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]

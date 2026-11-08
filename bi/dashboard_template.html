@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Olist | Kinerja E-Commerce</title>
+<style>
+:root{color-scheme:light;--ink:#183334;--muted:#506362;--line:#d9e2de;--accent:#17635c;--rust:#a94b38;--bg:#f3f6f3}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:15px system-ui,sans-serif;color:var(--ink)}
+header{background:#123b39;color:#fff;padding:32px max(5vw,20px) 28px}h1{font-size:clamp(28px,4vw,46px);margin:4px 0 10px;line-height:1.05;letter-spacing:-.04em}header p{margin:0;max-width:66ch;color:#d5e7df}.tag{font-size:12px;letter-spacing:.12em;font-weight:700;color:#a8d9c8}
+main{max-width:1330px;margin:auto;padding:22px clamp(14px,4vw,50px)}.panel,.filters,.card{background:white;border:1px solid var(--line);border-radius:12px}.filters{padding:15px;display:flex;gap:12px;flex-wrap:wrap;align-items:end}label{display:grid;gap:5px;font-size:12px;font-weight:650}select,button{font:inherit;border:1px solid #8da49f;border-radius:6px;padding:7px 9px;background:white;color:var(--ink);max-width:100%}button{cursor:pointer}button[aria-pressed=true]{background:var(--accent);color:white;border-color:var(--accent)}:focus-visible{outline:3px solid #ae6334;outline-offset:2px}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin:19px 0}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:11px}.card{padding:13px}.card b{display:block;font-size:24px;line-height:1.25;margin-top:5px}.card small,.note{color:var(--muted)}.note{font-size:13px;line-height:1.5}.panel{margin:14px 0;padding:17px;overflow:auto}h2{font-size:19px;margin:0 0 8px}table{width:100%;border-collapse:collapse;min-width:520px}th,td{text-align:right;padding:9px 7px;border-bottom:1px solid var(--line);white-space:nowrap}th:first-child,td:first-child{text-align:left}th{font-size:12px;color:var(--muted)}.barrow{display:grid;grid-template-columns:90px 1fr 88px;gap:8px;align-items:center;margin:5px 0;font-size:12px}.track{background:#edf2ef;height:12px;border-radius:3px}.fill{background:var(--accent);height:100%;border-radius:3px}.delivery .fill{background:var(--rust)}footer{padding:6px 0 18px;color:var(--muted);font-size:12px}a{color:var(--accent)}.filters label:last-of-type{flex:1;min-width:155px}
+</style></head><body>
+<header><span class="tag">OLIST · STUDI KASUS HISTORIS</span><h1>Kinerja E-Commerce</h1><p>Dari nilai pesanan hingga ketepatan pengiriman dan ulasan pelanggan.</p></header>
+<main><section class="filters" aria-label="Filter laporan">
+<label>Mulai<select id="start"></select></label><label>Sampai<select id="end"></select></label>
+<label>Negara bagian pelanggan<select id="state"></select></label><label>Kategori utama pesanan<select id="category"></select></label>
+<button id="reset" type="button">Reset</button></section>
+<nav aria-label="Halaman laporan"><button data-view="sales" aria-pressed="true">Penjualan</button><button data-view="delivery" aria-pressed="false">Pengiriman</button><button data-view="customer" aria-pressed="false">Pengalaman pelanggan</button></nav>
+<p class="note" id="scope" aria-live="polite"></p>
+<section id="view"></section>
+<footer>Sumber <a href="https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce">Olist via Kaggle</a> · CC BY-NC-SA 4.0 · BRL · Bulan berdasarkan tanggal pembelian.</footer></main>
+<script id="data" type="application/json">__OLIST_CUBE__</script>
+<script>
+'use strict';
+const {fields,rows}=JSON.parse(document.getElementById('data').textContent);
+const data=rows.map(row=>Object.fromEntries(fields.map((field,i)=>[field,row[i]])));
+const byId=id=>document.getElementById(id);
+const unique=key=>[...new Set(data.map(row=>row[key]))].sort();
+const controls=['start','end','state','category'];
+for(const [id,values] of [['start',unique('month')],['end',unique('month')],['state',['',...unique('state')]],['category',['',...unique('category')]]])
+  byId(id).replaceChildren(...values.map(v=>new Option(v || 'Semua',v)));
+const fmt=(x,d=0)=>x==null?'—':x.toLocaleString('id-ID',{maximumFractionDigits:d,minimumFractionDigits:d});
+const money=x=>'R$ '+fmt(x/100,2);
+const ratio=(x,n)=>n?x/n:null;
+const pct=(x,n)=>n?fmt(100*x/n,1)+'%':'—';
+const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sum=arr=>Object.fromEntries(fields.slice(3).map(k=>[k,arr.reduce((s,r)=>s+r[k],0)]));
+const grouped=(arr,key)=>{
+  const groups=new Map();
+  for(const row of arr){const k=key(row);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(row);}
+  return [...groups].map(([name,group])=>({name,...sum(group)}));
+};
+const cards=entries=>'<div class="cards">'+entries.map(([title,value,note])=>'<div class="card">'+esc(title)+'<b>'+esc(value)+'</b><small>'+esc(note)+'</small></div>').join('')+'</div>';
+const panel=(title,content)=>'<div class="panel"><h2>'+esc(title)+'</h2>'+content+'</div>';
+const table=(heads,entries)=>'<table><thead><tr>'+heads.map(h=>'<th scope="col">'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+entries.map(row=>'<tr>'+row.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+const bars=(series,key,print)=>{const max=Math.max(1,...series.map(x=>x[key]));return series.map(x=>'<div class="barrow"><span>'+esc(x.name)+'</span><div class="track"><div class="fill" style="width:'+100*x[key]/max+'%"></div></div><span>'+esc(print(x[key]))+'</span></div>').join('');};
+let view='sales';
+function reset(){byId('start').value='2017-01';byId('end').value='2018-08';byId('state').value='';byId('category').value='';render();}
+function render(){
+  const [start,end,state,category]=controls.map(id=>byId(id).value);
+  const rows=data.filter(r=>r.month>=start&&r.month<=end&&(!state||r.state===state)&&(!category||r.category===category));
+  const m=sum(rows);
+  byId('scope').textContent=start+' hingga '+end+' · '+fmt(m.orders)+' pesanan · '+(state||'semua wilayah')+' · '+(category||'semua kategori');
+  if(!rows.length){byId('view').innerHTML=panel('Tidak ada data','<p>Ubah periode atau filter untuk melihat pesanan.</p>');return;}
+  const series=grouped(rows,x=>x.month).sort((a,b)=>a.name.localeCompare(b.name));
+  if(view==='sales'){
+    const states=grouped(rows,x=>x.state).sort((a,b)=>b.gmv_cents-a.gmv_cents).slice(0,10);
+    byId('view').innerHTML=cards([['Pesanan',fmt(m.orders),'Semua status'],['Pesanan diterima',fmt(m.delivered),'Status delivered'],['Nilai produk',money(m.gmv_cents),'Pesanan diterima · tanpa ongkir'],['Nilai per pesanan',m.delivered?money(m.gmv_cents/m.delivered):'—','Rata-rata pesanan diterima']])
+      +panel('Nilai produk menurut bulan',bars(series,'gmv_cents',x=>'R$ '+fmt(x/100)))
+      +panel('Wilayah berdasarkan nilai produk',table(['Negara bagian','Pesanan','Diterima','Nilai produk'],states.map(x=>[x.name,fmt(x.orders),fmt(x.delivered),money(x.gmv_cents)])))
+      +'<p class="note">Filter kategori memakai kategori dengan nilai produk terbesar dalam satu pesanan. Nilai seluruh pesanan dialokasikan satu kali ke kategori utama.</p>';
+  } else if(view==='delivery'){
+    const priority=grouped(rows,x=>x.state+' · '+x.category).filter(x=>x.eligible>=100).sort((a,b)=>b.late-a.late||a.name.localeCompare(b.name)).slice(0,12);
+    byId('view').innerHTML=cards([['Pesanan layak ukur',fmt(m.eligible),'Diterima dengan tanggal yang valid'],['Pesanan terlambat',fmt(m.late),'Diterima setelah tanggal estimasi'],['Tingkat terlambat',pct(m.late,m.eligible),'Terlambat ÷ layak ukur'],['Nilai terkait',money(m.late_gmv_cents),'Nilai produk pesanan terlambat']])
+      +panel('Jumlah terlambat menurut bulan','<div class="delivery">'+bars(series,'late',fmt)+'</div>')
+      +panel('Prioritas wilayah dan kategori',priority.length?table(['Segmen','Layak ukur','Terlambat','Tingkat','Nilai terkait'],priority.map(x=>[x.name,fmt(x.eligible),fmt(x.late),pct(x.late,x.eligible),money(x.late_gmv_cents)])):'<p>Belum ada segmen dengan minimal 100 pesanan layak ukur pada filter ini.</p>')
+      +panel('Durasi per tahap pada pesanan dengan urutan waktu valid',table(['Kelompok','Pesanan','Sebelum serah terima','Setelah serah terima'],[['Tepat waktu',fmt(m.ontime_phase_n),fmt(ratio(m.ontime_pre_days,m.ontime_phase_n),1),fmt(ratio(m.ontime_post_days,m.ontime_phase_n),1)],['Terlambat',fmt(m.late_phase_n),fmt(ratio(m.late_pre_days,m.late_phase_n),1),fmt(ratio(m.late_post_days,m.late_phase_n),1)]]))
+      +'<p class="note">Durasi dalam hari. Segmen ditampilkan mulai dari 100 pesanan layak ukur. Nilai terkait mengukur nilai produk yang terlibat.</p>';
+  } else {
+    byId('view').innerHTML=cards([['Ulasan terpakai',fmt(m.late_review_n+m.ontime_review_n),'Pesanan layak ukur dengan rating'],['Skor tepat waktu',fmt(ratio(m.ontime_review_sum,m.ontime_review_n),2),'Rata-rata rating dari 5'],['Skor terlambat',fmt(ratio(m.late_review_sum,m.late_review_n),2),'Rata-rata rating dari 5'],['Rating rendah saat terlambat',pct(m.late_low_review,m.late_review_n),'Rating 1–2 di antara yang mengulas']])
+      +panel('Perbandingan rating pelanggan',table(['Kelompok','Ulasan','Cakupan ulasan','Rata-rata rating','Rating 1–2'],[['Tepat waktu',fmt(m.ontime_review_n),pct(m.ontime_review_n,m.eligible-m.late),fmt(ratio(m.ontime_review_sum,m.ontime_review_n),2),pct(m.ontime_low_review,m.ontime_review_n)],['Terlambat',fmt(m.late_review_n),pct(m.late_review_n,m.late),fmt(ratio(m.late_review_sum,m.late_review_n),2),pct(m.late_low_review,m.late_review_n)]]))
+      +'<p class="note">Satu rating terakhir per pesanan. Perbandingan bersifat deskriptif dan mencakup pelanggan yang memberi rating.</p>';
+  }
+}
+for(const id of controls)byId(id).addEventListener('change',render);
+byId('reset').addEventListener('click',reset);
+for(const button of document.querySelectorAll('[data-view]'))button.addEventListener('click',()=>{
+  view=button.dataset.view;
+  for(const other of document.querySelectorAll('[data-view]'))other.setAttribute('aria-pressed',String(other===button));
+  render();
+});
+reset();
+</script></body></html>

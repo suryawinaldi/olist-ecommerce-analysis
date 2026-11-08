@@ -1,0 +1,22 @@
+-- Dashboard cube. One order contributes to exactly one month/state/category cell.
+SELECT month,state,category,COUNT(*) AS orders,
+       SUM(status='delivered') AS delivered,
+       SUM(status='canceled') AS canceled,
+       SUM(CASE WHEN status='delivered' THEN item_cents ELSE 0 END) AS gmv_cents,
+       SUM(CASE WHEN late=1 THEN item_cents ELSE 0 END) AS late_gmv_cents,
+       SUM(eligible) AS eligible,
+       SUM(COALESCE(late,0)) AS late,
+       SUM(CASE WHEN late=1 THEN CAST(JULIANDAY(DATE(delivered_ts))-JULIANDAY(DATE(promised_ts)) AS INTEGER) ELSE 0 END) AS overdue_sum,
+       COUNT(CASE WHEN late=1 THEN pre_carrier_days END) AS late_phase_n,
+       COUNT(CASE WHEN late=0 THEN pre_carrier_days END) AS ontime_phase_n,
+       TOTAL(CASE WHEN late=1 THEN pre_carrier_days END) AS late_pre_days,
+       TOTAL(CASE WHEN late=0 THEN pre_carrier_days END) AS ontime_pre_days,
+       TOTAL(CASE WHEN late=1 THEN post_carrier_days END) AS late_post_days,
+       TOTAL(CASE WHEN late=0 THEN post_carrier_days END) AS ontime_post_days,
+       COUNT(CASE WHEN late=1 THEN review_score END) AS late_review_n,
+       COUNT(CASE WHEN late=0 THEN review_score END) AS ontime_review_n,
+       TOTAL(CASE WHEN late=1 THEN review_score END) AS late_review_sum,
+       TOTAL(CASE WHEN late=0 THEN review_score END) AS ontime_review_sum,
+       SUM(CASE WHEN late=1 AND review_score<=2 THEN 1 ELSE 0 END) AS late_low_review,
+       SUM(CASE WHEN late=0 AND review_score<=2 THEN 1 ELSE 0 END) AS ontime_low_review
+FROM order_fact GROUP BY month,state,category ORDER BY month,state,category;

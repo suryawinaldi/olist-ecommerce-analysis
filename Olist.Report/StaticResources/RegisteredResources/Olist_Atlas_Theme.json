@@ -1,0 +1,14 @@
+{
+  "name": "Olist • Atlas",
+  "dataColors": [
+    "#53E3D2",
+    "#FFAF66",
+    "#A5B9FC",
+    "#7D99BE",
+    "#67AEBC",
+    "#B7C9BE"
+  ],
+  "background": "#101B2C",
+  "foreground": "#F3F6FD",
+  "tableAccent": "#53E3D2"
+}

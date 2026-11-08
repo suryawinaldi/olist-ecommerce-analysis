@@ -1,0 +1,8 @@
+.pbi/
+**/.pbi/
+__pycache__/
+.ipynb_checkpoints/
+.venv/
+*.sqlite
+*.db
+.DS_Store

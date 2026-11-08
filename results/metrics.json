@@ -1,0 +1,56 @@
+{
+  "full": {
+    "orders": 99441,
+    "delivered": 96478,
+    "eligible": 96470,
+    "late": 6534,
+    "gmv": 13221498.11,
+    "late_gmv": 985924.34
+  },
+  "core": {
+    "orders": 99092,
+    "delivered": 96211,
+    "eligible": 96203,
+    "late": 6531,
+    "gmv": 13181027.13,
+    "late_gmv": 985618.47
+  },
+  "reviews_states_qualified": 20,
+  "reviews_states_positive_gap": 20,
+  "phase": {
+    "0.0": {
+      "pre_carrier_days_size": 89750,
+      "pre_carrier_days_mean": 3.0274952328994993,
+      "pre_carrier_days_median": 2.1505671297200024,
+      "pre_carrier_days_p90": 6.123239583196119,
+      "post_carrier_days_size": 89750,
+      "post_carrier_days_mean": 7.98470619467717,
+      "post_carrier_days_median": 6.946093749953434,
+      "post_carrier_days_p90": 15.25850578700193
+    },
+    "1.0": {
+      "pre_carrier_days_size": 6531,
+      "pre_carrier_days_mean": 6.06095168271593,
+      "pre_carrier_days_median": 3.4971759258769453,
+      "pre_carrier_days_p90": 14.447280092630535,
+      "post_carrier_days_size": 6531,
+      "post_carrier_days_mean": 27.888556505084054,
+      "post_carrier_days_median": 26.198067129589617,
+      "post_carrier_days_p90": 44.7795949075371
+    }
+  },
+  "reviews": {
+    "0.0": {
+      "n": 89443,
+      "mean": 4.290386055923885,
+      "low": 0.09267354628087161,
+      "coverage": 0.9945183241416118
+    },
+    "1.0": {
+      "n": 6381,
+      "mean": 2.270490518727472,
+      "low": 0.6241968343519825,
+      "coverage": 0.9765840220385675
+    }
+  }
+}

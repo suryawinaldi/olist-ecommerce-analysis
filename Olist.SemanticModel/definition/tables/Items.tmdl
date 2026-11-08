@@ -1,0 +1,64 @@
+table Items
+
+	measure 'Nilai item' = DIVIDE(CALCULATE(SUM(Items[item_cents]), KEEPFILTERS(Items[order_status] = "delivered")),100)
+		formatString: #,0.00
+
+	measure 'Baris item' = COUNTROWS(Items)
+		formatString: #,0
+
+	column order_id
+		dataType: string
+		summarizeBy: none
+		sourceColumn: order_id
+
+	column item_no
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: item_no
+
+	column seller_id
+		dataType: string
+		summarizeBy: none
+		sourceColumn: seller_id
+
+	column product_id
+		dataType: string
+		summarizeBy: none
+		sourceColumn: product_id
+
+	column category
+		dataType: string
+		summarizeBy: none
+		sourceColumn: category
+
+	column seller_state
+		dataType: string
+		summarizeBy: none
+		sourceColumn: seller_state
+
+	column item_cents
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: item_cents
+
+	column freight_cents
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: freight_cents
+
+	column order_status
+		dataType: string
+		summarizeBy: none
+		sourceColumn: order_status
+
+	partition Items = m
+		mode: import
+		source =
+			let
+			    Csv = Csv.Document(File.Contents(FolderData & "\Olist_Item_Gabungan.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+			    Headers = Table.PromoteHeaders(Csv, [PromoteAllScalars=true]),
+			    Selected = Table.SelectColumns(Headers, {"order_id", "item_no", "seller_id", "product_id", "category", "seller_state", "item_cents", "freight_cents", "order_status"}),
+			    Blanks = Table.ReplaceValue(Selected, "", null, Replacer.ReplaceValue, Table.ColumnNames(Selected)),
+			    Typed = Table.TransformColumnTypes(Blanks, {{"order_id", type text}, {"item_no", Int64.Type}, {"seller_id", type text}, {"product_id", type text}, {"category", type text}, {"seller_state", type text}, {"item_cents", Int64.Type}, {"freight_cents", Int64.Type}, {"order_status", type text}}, "en-US")
+			in
+			    Typed

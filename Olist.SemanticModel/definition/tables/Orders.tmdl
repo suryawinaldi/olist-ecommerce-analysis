@@ -1,0 +1,195 @@
+table Orders
+
+	measure 'Prioritas terlambat' = IF([Layak ukur] >= 100, [Terlambat])
+		formatString: #,0
+
+	measure 'Porsi SP' = DIVIDE(CALCULATE([Nilai produk], KEEPFILTERS(Orders[state] = "SP")), [Nilai produk])
+		formatString: 0.0%
+
+	measure 'Pasca tepat waktu' = CALCULATE([Pasca serah terima], KEEPFILTERS(Orders[late] = 0))
+		formatString: 0.0
+
+	measure 'Pasca terlambat' = CALCULATE([Pasca serah terima], KEEPFILTERS(Orders[late] = 1))
+		formatString: 0.0
+
+	measure 'Rating rendah tepat waktu' = CALCULATE([Rating rendah], KEEPFILTERS(Orders[late] = 0))
+		formatString: 0.0%
+
+	measure 'Rating rendah terlambat' = CALCULATE([Rating rendah], KEEPFILTERS(Orders[late] = 1))
+		formatString: 0.0%
+
+	measure 'Tepat waktu' = CALCULATE(DIVIDE([Rating tersedia], CALCULATE([Rating tersedia], REMOVEFILTERS(Orders[review_score]))), KEEPFILTERS(Orders[late] = 0))
+		formatString: 0.0%
+
+	measure 'Rating pesanan terlambat' = CALCULATE(DIVIDE([Rating tersedia], CALCULATE([Rating tersedia], REMOVEFILTERS(Orders[review_score]))), KEEPFILTERS(Orders[late] = 1))
+		formatString: 0.0%
+
+	measure 'Pesanan' = COUNTROWS(Orders)
+		formatString: #,0
+
+	measure 'Diterima' = CALCULATE([Pesanan], KEEPFILTERS(Orders[status] = "delivered"))
+		formatString: #,0
+
+	measure 'Layak ukur' = SUM(Orders[eligible])
+		formatString: #,0
+
+	measure 'Terlambat' = SUM(Orders[late])
+		formatString: #,0
+
+	measure 'Tingkat terlambat' = DIVIDE([Terlambat], [Layak ukur])
+		formatString: 0.0%
+
+	measure 'Nilai produk' = DIVIDE(CALCULATE(SUM(Orders[item_cents]), KEEPFILTERS(Orders[status] = "delivered")),100)
+		formatString: #,0.00
+
+	measure 'Nilai per pesanan' = DIVIDE([Nilai produk], [Diterima])
+		formatString: #,0.00
+
+	measure 'Nilai produk terkait' = DIVIDE(CALCULATE(SUM(Orders[item_cents]), KEEPFILTERS(Orders[late] = 1)),100)
+		formatString: #,0.00
+
+	measure 'Median keterlambatan' = CALCULATE(MEDIAN(Orders[overdue_days]), KEEPFILTERS(Orders[late] = 1))
+		formatString: 0.0
+
+	measure 'Pra serah terima' = CALCULATE(AVERAGE(Orders[pre_carrier_days]), KEEPFILTERS(Orders[eligible] = 1))
+		formatString: 0.0
+
+	measure 'Pasca serah terima' = CALCULATE(AVERAGE(Orders[post_carrier_days]), KEEPFILTERS(Orders[eligible] = 1))
+		formatString: 0.0
+
+	measure 'Rating tersedia' = CALCULATE(COUNT(Orders[review_score]), KEEPFILTERS(Orders[eligible] = 1))
+		formatString: #,0
+
+	measure 'Skor rata-rata' = CALCULATE(AVERAGE(Orders[review_score]), KEEPFILTERS(Orders[eligible] = 1))
+		formatString: 0.00
+
+	measure 'Rating rendah' = DIVIDE(CALCULATE([Rating tersedia], KEEPFILTERS(Orders[review_score] IN {1,2})),[Rating tersedia])
+		formatString: 0.0%
+
+	measure 'Cakupan rating' = DIVIDE([Rating tersedia],[Layak ukur])
+		formatString: 0.0%
+
+	measure 'Skor tepat waktu' = CALCULATE([Skor rata-rata], KEEPFILTERS(Orders[late] = 0))
+		formatString: 0.00
+
+	measure 'Skor terlambat' = CALCULATE([Skor rata-rata], KEEPFILTERS(Orders[late] = 1))
+		formatString: 0.00
+
+	column order_id
+		dataType: string
+		summarizeBy: none
+		sourceColumn: order_id
+
+	column month
+		dataType: string
+		summarizeBy: none
+		sourceColumn: month
+
+	column state
+		dataType: string
+		summarizeBy: none
+		sourceColumn: state
+
+	column category
+		dataType: string
+		summarizeBy: none
+		sourceColumn: category
+
+	column status
+		dataType: string
+		summarizeBy: none
+		sourceColumn: status
+
+	column item_cents
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: item_cents
+
+	column freight_cents
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: freight_cents
+
+	column payment_cents
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: payment_cents
+
+	column eligible
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: eligible
+
+	column late
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: late
+
+	column review_score
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: review_score
+
+	column overdue_days
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: overdue_days
+
+	column pre_carrier_days
+		dataType: double
+		summarizeBy: none
+		sourceColumn: pre_carrier_days
+
+	column post_carrier_days
+		dataType: double
+		summarizeBy: none
+		sourceColumn: post_carrier_days
+
+	column delivery_days
+		dataType: double
+		summarizeBy: none
+		sourceColumn: delivery_days
+
+	column purchase_ts
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: purchase_ts
+
+	column delivered_ts
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: delivered_ts
+
+	column promised_ts
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: promised_ts
+
+	column seller_count
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: seller_count
+
+	column period_scope
+		dataType: string
+		summarizeBy: none
+		sourceColumn: period_scope
+
+	column delivery_group
+		dataType: string
+		summarizeBy: none
+		sourceColumn: delivery_group
+
+	partition Orders = m
+		mode: import
+		source =
+			let
+			    Csv = Csv.Document(File.Contents(FolderData & "\Olist_Pesanan_Gabungan.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+			    Headers = Table.PromoteHeaders(Csv, [PromoteAllScalars=true]),
+			    Selected = Table.SelectColumns(Headers, {"order_id", "month", "state", "category", "status", "item_cents", "freight_cents", "payment_cents", "eligible", "late", "review_score", "overdue_days", "pre_carrier_days", "post_carrier_days", "delivery_days", "purchase_ts", "delivered_ts", "promised_ts", "seller_count"}),
+			    Blanks = Table.ReplaceValue(Selected, "", null, Replacer.ReplaceValue, Table.ColumnNames(Selected)),
+			    Typed = Table.TransformColumnTypes(Blanks, {{"order_id", type text}, {"month", type text}, {"state", type text}, {"category", type text}, {"status", type text}, {"item_cents", Int64.Type}, {"freight_cents", Int64.Type}, {"payment_cents", Int64.Type}, {"eligible", Int64.Type}, {"late", Int64.Type}, {"review_score", Int64.Type}, {"overdue_days", Int64.Type}, {"pre_carrier_days", type number}, {"post_carrier_days", type number}, {"delivery_days", type number}, {"purchase_ts", type datetime}, {"delivered_ts", type datetime}, {"promised_ts", type datetime}, {"seller_count", Int64.Type}}, "en-US"),
+			    Scope = Table.AddColumn(Typed, "period_scope", each if [month] >= "2017-01" and [month] <= "2018-08" then "Periode utama" else "Bulan tepi", type text),
+			    Groups = Table.AddColumn(Scope, "delivery_group", each if [eligible] <> 1 then "Belum layak ukur" else if [late] = 1 then "Terlambat" else "Tepat waktu", type text)
+			in
+			    Groups
