@@ -1,0 +1,2 @@
+# Preserve analytical snapshots exactly, including original CSV line endings.
+*.csv -text
